@@ -11,6 +11,7 @@ def init_prices():
     fossil_price = {}
     aggregate_prices = []
 
+    print("Initializing prices...")
     # Get artifact prices
     tujen_currency = "Black Scythe Artifact"
     resp = requests.get("https://poe.ninja/api/data/ItemOverview?",params={"league":"Expedition", "type":"Artifact"}, headers = {'content-type': 'application/json'}).json()["lines"]
@@ -42,5 +43,7 @@ def init_prices():
 
     date_stamp = datetime.datetime.now()
     aggregate_prices.append(date_stamp)
+
+    print("Prices initialized at " + str(date_stamp))
 
     return aggregate_prices
