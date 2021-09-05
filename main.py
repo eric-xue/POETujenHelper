@@ -5,6 +5,7 @@ import re
 import requests
 import psutil
 import init_prices
+from win32gui import GetWindowText, GetForegroundWindow
 
 clipboard = ""
 item_classes = {
@@ -20,15 +21,22 @@ price_index = {
     "Fragment" : 2
 }
 
+pathofexile_focused = False
 while True:
-    if "PathOfExile.exe" in (p.name()for p in psutil.process_iter()):
-        while True:
+    if GetWindowText(GetForegroundWindow()) == "Path of Exile":
+        if not(pathofexile_focused):
+            pathofexile_focused = True
+            print("Path of Exile detected")
+            print("-" * 80)
+        while GetWindowText(GetForegroundWindow()) == "Path of Exile":
             time.sleep(0.1)
             if keyboard.is_pressed('CTRL+c'):
                 temp = pyperclip.paste()
                 if re.match("^.*Item Class.*$", pyperclip.paste().splitlines()[0]):
                     clipboard = pyperclip.paste()
                     break
+        if GetWindowText(GetForegroundWindow()) != "Path of Exile":
+            continue
 
         item_lines = clipboard.splitlines()
         filtered = [x for x in item_lines if re.match("^.*Item Class.*$|^.*Stack Size.*$",x)]
@@ -36,7 +44,12 @@ while True:
 
         filtered[0] = item_classes.get(filtered[0].split(': ')[1], "N/A")
         if filtered[0] == "Currency":
-            filtered[1] = filtered[1].split(': ')[1].split('/')[0]
+            if re.match(".*Stack Size.*", filtered[1]):
+                filtered[1] = filtered[1].split(': ')[1].split('/')[0].replace(',' , '')
+            else:
+                print("Error: {itemname} not supported.".format(itemname=filtered[-1]))
+                print("-" * 80)
+                continue
         headers = {'content-type': 'application/json'}
         if filtered[0] != "N/A":
             if filtered[0] == "Currency":
@@ -53,15 +66,25 @@ while True:
             common_price = item_chaos_value * prices[0].get("Common Black Scythe Artifact")
             greater_price = item_chaos_value * prices[0].get("Greater Black Scythe Artifact")
             grand_price = item_chaos_value * prices[0].get("Grand Black Scythe Artifact")
-            print(filtered)
-            print("Lesser Breakpoint = " + str(lesser_price))
-            print("Common Breakpoint = " + str(common_price))
-            print("Greater Breakpoint = " + str(greater_price))
-            print("Grand Breakpoint = " + str(grand_price))
+
+            print("Item: {item} \n"
+                  "Amount: {stacksize} \n"
+                  "Total Chaos Value: {chaosvalue} \n\n"
+                  "Lesser Artifact Breakpoint = {lesser_price} \n"
+                  "Common Artifact Breakpoint = {common_price} \n"
+                  "Greater Artifact Breakpoint = {greater_price} \n"
+                  "Grand Artifact Breakpoint = {grand_price}"
+                  .format(item=filtered[2], stacksize=filtered[1], chaosvalue=item_chaos_value, lesser_price=lesser_price,
+                          common_price=common_price,greater_price=greater_price,grand_price=grand_price))
         else:
             print("Error: Item copied could not be found.")
             print(item_lines)
+        print("-" * 80)
     else:
-       time.sleep(0.5)
+        if (pathofexile_focused):
+            pathofexile_focused = False
+            print("Path of Exile not detected")
+            print("-" * 80)
+        time.sleep(0.5)
 
 
