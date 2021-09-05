@@ -58,7 +58,12 @@ while True:
                 elif re.match(".*Oil$", filtered[-1]):
                     item_chaos_value = (prices[3][filtered[-1]])*int(filtered[1])
                 else:
-                    item_chaos_value = (prices[1][filtered[-1]])*int(filtered[1])
+                    try:
+                        item_chaos_value = (prices[1][filtered[-1]])*int(filtered[1])
+                    except Exception:
+                        print("Error: {itemname} not supported.".format(itemname=filtered[-1]))
+                        print("-" * 80)
+                        continue
             elif filtered[0] == "Fragment":
                 item_value = prices[2][filtered[-1]]
                 item_chaos_value = int(filtered[1]) * (item_value ** -1)
