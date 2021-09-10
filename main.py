@@ -4,7 +4,12 @@ import time
 import re
 import price_retrieval
 import league_retrieval
-from win32gui import GetWindowText, GetForegroundWindow
+from win32gui import GetWindowText, GetForegroundWindow, SetWindowPos
+import win32con
+import os
+
+SetWindowPos(GetForegroundWindow(), win32con.HWND_TOPMOST, 0,0,0,0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+os.system('mode 80,30')
 
 # Setup dictionaries
 clipboard = ""
@@ -37,11 +42,17 @@ while True:
         while GetWindowText(GetForegroundWindow()) == "Path of Exile":
             # Listen for control+c and extract clipboard when happen
             if keyboard.is_pressed('CTRL+c'):
-                temp = pyperclip.paste()
                 # Regex check if copied an item
-                if re.match("^.*Item Class.*$", pyperclip.paste().splitlines()[0]):
-                    clipboard = pyperclip.paste()
-                    break
+                # Hacky way to deal with clipboard buffer??????
+                try:
+                    if re.match("^.*Item Class.*$", pyperclip.paste().splitlines()[0]):
+                        clipboard = pyperclip.paste()
+                        break
+                except Exception:
+                    continue
+        # Check in case Path of Exile goes out of focus
+        if GetWindowText(GetForegroundWindow()) != "Path of Exile":
+            continue
 
         # Extract important info from item description
         item_lines = clipboard.splitlines()
@@ -57,6 +68,9 @@ while True:
             else:
                 print("Error: {itemname} not supported.".format(itemname=filtered[-1]))
                 print("-" * 80)
+                # Clears clipboard to fix bug
+                pyperclip.copy('')
+                time.sleep(0.1)
                 continue
         headers = {'content-type': 'application/json'}
 
@@ -75,6 +89,8 @@ while True:
                     except Exception:
                         print("Error: {itemname} not supported.".format(itemname=filtered[-1]))
                         print("-" * 80)
+                        pyperclip.copy('')
+                        time.sleep(0.1)
                         continue
             elif filtered[0] == "Fragment":
                 item_value = prices[2][filtered[-1]]
@@ -99,6 +115,8 @@ while True:
             print("Error: Item copied could not be found.")
             print(item_lines)
         print("-" * 80)
+        # Deal with user holding onto control which seems to copy multiple texts
+        pyperclip.copy('')
         time.sleep(0.1)
     # If not in focus, do nothing
     else:
