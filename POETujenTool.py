@@ -3,7 +3,8 @@ import pyperclip
 import time
 import re
 import price_retrieval
-import league_retrieval
+import league_retrieval_API
+import league_retrieval_webscrape
 from win32gui import GetWindowText, GetForegroundWindow, SetWindowPos, EnumWindows, GetWindowText
 import win32con
 import os
@@ -16,7 +17,8 @@ windowList = []
 EnumWindows(lambda hwnd, windowList: windowList.append((GetWindowText(hwnd),hwnd)), windowList)
 cmdWindow = [i for i in windowList if "POETujenTool.exe" in i[0]]
 overlay_alwaysontop = True
-SetWindowPos(cmdWindow[0][1], win32con.HWND_NOTOPMOST, 0, 0, 800, 500, win32con.SWP_NOMOVE)
+if cmdWindow:
+    SetWindowPos(cmdWindow[0][1], win32con.HWND_NOTOPMOST, 0, 0, 800, 500, win32con.SWP_NOMOVE)
 
 # Setup dictionaries
 clipboard = ""
@@ -31,9 +33,16 @@ price_index = {
 }
 
 # Initialize prices
-league = league_retrieval.choose_league()
+while True:
+    league_retr_input = input("Choose whether to use your POESESSID or a webscraper to get the current leagues. \n"
+                              "[0] POESESSID \n"
+                              "[1] Webscraper \n")
+    if league_retr_input.isnumeric() and 0 in [0,1]:
+        if int(league_retr_input) == 0:
+            league = league_retrieval_API.choose_league()
+        else:
+            league = league_retrieval_webscrape.get_league_scrape()
 prices = price_retrieval.init_prices(league)
-
 
 
 print("Now waiting for Path of Exile to be selected...")
@@ -41,7 +50,7 @@ print("-" * 80)
 # Toggled flag to log when POE is focused or not
 pathofexile_focused = False
 while True:
-    if keyboard.is_pressed('ctrl+shift+o'):
+    if keyboard.is_pressed('ctrl+shift+o') and cmdWindow:
         if overlay_alwaysontop:
             SetWindowPos(cmdWindow[0][1], win32con.HWND_NOTOPMOST, 0, 0, 800, 500,
                          win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
