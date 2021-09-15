@@ -14,7 +14,7 @@ entered and valid, it will have been saved and automatically reused for this ste
 
 **Hotkeys**
 - ```control+c``` - Get item value in artifacts
-- ```shift+control+o``` - Toggle always-on-top
+- ```shift+control+o``` - Toggle always-on-top (currently program must be selected, have to find unused hotkey)
 
 
 **To do**
