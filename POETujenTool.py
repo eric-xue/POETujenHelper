@@ -16,9 +16,25 @@ os.system("")
 windowList = []
 EnumWindows(lambda hwnd, windowList: windowList.append((GetWindowText(hwnd),hwnd)), windowList)
 cmdWindow = [i for i in windowList if "POETujenTool.exe" in i[0]]
-overlay_alwaysontop = True
+overlay_alwaysontop = False
 if cmdWindow:
-    SetWindowPos(cmdWindow[0][1], win32con.HWND_NOTOPMOST, 0, 0, 800, 500, win32con.SWP_NOMOVE)
+    SetWindowPos(cmdWindow[0][1], win32con.HWND_NOTOPMOST, 0, 0, 700, 400, win32con.SWP_NOMOVE)
+
+
+def toggle_overlay(overlay_flag):
+    if overlay_flag:
+        SetWindowPos(cmdWindow[0][1], win32con.HWND_BOTTOM, 0, 0, 0, 0,
+                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+        print('\033[91m' + 'Overlay Off' + '\033[0m')
+    else:
+        SetWindowPos(cmdWindow[0][1], win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+        print('\033[92m' + 'Overlay On' + '\033[0m')
+    print("-" * 80)
+    overlay_flag = not(overlay_flag)
+    time.sleep(0.1)
+    return overlay_flag
+
 
 # Setup dictionaries
 clipboard = ""
@@ -42,6 +58,7 @@ while True:
             league = league_retrieval_API.choose_league()
         else:
             league = league_retrieval_webscrape.get_league_scrape()
+        break
 prices = price_retrieval.init_prices(league)
 
 
@@ -50,21 +67,11 @@ print("-" * 80)
 # Toggled flag to log when POE is focused or not
 pathofexile_focused = False
 while True:
-    if keyboard.is_pressed('ctrl+shift+o') and cmdWindow:
-        if overlay_alwaysontop:
-            SetWindowPos(cmdWindow[0][1], win32con.HWND_NOTOPMOST, 0, 0, 800, 500,
-                         win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-            print('\033[91m' + 'Overlay Off' + '\033[0m')
-        else:
-            SetWindowPos(cmdWindow[0][1], win32con.HWND_TOPMOST, 0, 0, 800, 500,
-                         win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-            print('\033[92m' + 'Overlay On' + '\033[0m')
-        print("-" * 80)
-        overlay_alwaysontop = not(overlay_alwaysontop)
-        time.sleep(0.1)
+    if keyboard.is_pressed("shift+'") and ("POETujenTool.exe" in GetWindowText(GetForegroundWindow()) or GetWindowText(GetForegroundWindow()) == "Path of Exile"):
+        overlay_alwaysontop = toggle_overlay(overlay_alwaysontop)
         continue
     # Run if POE is in focus
-    if GetWindowText(GetForegroundWindow()) == "Path of Exile":
+    elif GetWindowText(GetForegroundWindow()) == "Path of Exile":
         if not(pathofexile_focused):
             pathofexile_focused = True
             print("Path of Exile detected")
@@ -80,6 +87,10 @@ while True:
                         break
                 except Exception:
                     continue
+            # Hacky fix to not working when path of exile is selected, need to fix with event listener class
+            elif keyboard.is_pressed("shift+'") and ("POETujenTool.exe" in GetWindowText(GetForegroundWindow()) or GetWindowText(GetForegroundWindow()) == "Path of Exile"):
+                overlay_alwaysontop = toggle_overlay(overlay_alwaysontop)
+                continue
         # Check in case Path of Exile goes out of focus
         if GetWindowText(GetForegroundWindow()) != "Path of Exile":
             continue
@@ -151,6 +162,8 @@ while True:
     # If not in focus, do nothing
     else:
         if (pathofexile_focused):
+            if overlay_alwaysontop:
+                overlay_alwaysontop = toggle_overlay(overlay_alwaysontop)
             pathofexile_focused = False
             print("Path of Exile not detected")
             print("-" * 80)
